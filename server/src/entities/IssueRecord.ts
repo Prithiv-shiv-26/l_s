@@ -3,7 +3,7 @@ import {
   PrimaryGeneratedColumn,
   ManyToOne,
   CreateDateColumn,
-  UpdateDateColumn,
+  Column,
 } from "typeorm";
 import { Book } from "./Book";
 import { User } from "./User";
@@ -12,6 +12,7 @@ import { User } from "./User";
 export class IssueRecord {
   @PrimaryGeneratedColumn()
   id!: number;
+
   @ManyToOne(() => User, { nullable: false })
   user!: User;
 
@@ -21,6 +22,6 @@ export class IssueRecord {
   @CreateDateColumn()
   issuedAt!: Date;
 
-  @UpdateDateColumn()
+  @Column({ type: "timestamp", nullable: true })
   returnedAt!: Date | null;
 }

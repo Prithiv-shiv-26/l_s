@@ -1,20 +1,52 @@
-# dependencies
+# =========================
+# Node / pnpm
+# =========================
 node_modules/
+.pnpm-store/
 
-# build output
+# =========================
+# Build outputs
+# =========================
 dist/
 build/
+coverage/
 
-# env
-.env
-.env.local
+# =========================
+# Vite / frontend
+# =========================
+.vite/
 
-# logs
+# =========================
+# Logs
+# =========================
 npm-debug.log*
+yarn-debug.log*
 pnpm-debug.log*
 
-# OS
-.DS_Store
+# =========================
+# Environment files
+# =========================
+.env
+.env.*
+!.env.example
 
-# editor
-.vscode/
+# =========================
+# OS / Editor
+# =========================
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# =========================
+# TypeScript
+# =========================
+*.tsbuildinfo
+
+# =========================
+# Tailwind
+# =========================
+.tailwindcss/

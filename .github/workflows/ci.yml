@@ -8,53 +8,44 @@ on:
 
 jobs:
   ci:
-    name: CI
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node: [18.x]
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 1️⃣ Install pnpm FIRST
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      # 2️⃣ Setup Node + pnpm cache
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 18
           cache: "pnpm"
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
-
-      - name: Cache pnpm store and node_modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.pnpm-store
-            client/node_modules
-            server/node_modules
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-
-
-      - name: Install client deps
+      # 3️⃣ Install dependencies
+      - name: Install client dependencies
         run: pnpm -C client install --frozen-lockfile
 
-      - name: Install server deps
+      - name: Install server dependencies
         run: pnpm -C server install --frozen-lockfile
 
+      # 4️⃣ Client checks
       - name: Lint client
         run: pnpm -C client run lint
 
-      - name: Type check & Build client
+      - name: Build client
         run: pnpm -C client run build
 
-      - name: Type check & Build server
-        run: npx -y typescript tsc -p server/tsconfig.json
+      # 5️⃣ Server type check
+      - name: Type check server
+        run: pnpm -C server exec tsc --noEmit
 
+      # 6️⃣ Upload artifacts
       - name: Upload build artifacts
         if: success()
         uses: actions/upload-artifact@v4

@@ -25,7 +25,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: "pnpm"
+
+      - name: Cache pnpm store and node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pnpm-store
+            client/node_modules
+            server/node_modules
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('client/pnpm-lock.yaml','server/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
 
       # 3️⃣ Install dependencies
       - name: Install client dependencies

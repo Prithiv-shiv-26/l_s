@@ -29,8 +29,15 @@ export default function UsersPage() {
     try {
       await deleteUser(id);
       loadUsers();
-    } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to delete");
+    } catch (err: unknown) {
+      let msg = "Failed to delete";
+      if (typeof err === "object" && err !== null) {
+        const e = err as Record<string, unknown>;
+        const response = e.response as Record<string, unknown> | undefined;
+        const data = response?.data as Record<string, unknown> | undefined;
+        if (typeof data?.message === "string") msg = data.message;
+      }
+      alert(msg);
     }
   };
 
@@ -45,12 +52,22 @@ export default function UsersPage() {
         {showForm ? "Cancel" : "Add User"}
       </button>
 
-      {showForm && <AddUserForm onSuccess={() => { loadUsers(); setShowForm(false); }} />}
+      {showForm && (
+        <AddUserForm
+          onSuccess={() => {
+            loadUsers();
+            setShowForm(false);
+          }}
+        />
+      )}
 
       {editingUser && (
         <EditUserForm
           user={editingUser}
-          onSuccess={() => { loadUsers(); setEditingUser(null); }}
+          onSuccess={() => {
+            loadUsers();
+            setEditingUser(null);
+          }}
           onCancel={() => setEditingUser(null)}
         />
       )}
@@ -69,7 +86,9 @@ export default function UsersPage() {
             <tr key={u.id} className="border-b">
               <td className="p-2">{u.name}</td>
               <td className="p-2">{u.email}</td>
-              <td className="p-2">{new Date(u.createdAt).toLocaleDateString()}</td>
+              <td className="p-2">
+                {new Date(u.createdAt).toLocaleDateString()}
+              </td>
               <td className="p-2">
                 <button
                   onClick={() => setEditingUser(u)}
@@ -89,7 +108,9 @@ export default function UsersPage() {
         </tbody>
       </table>
 
-      {users.length === 0 && <p className="text-gray-500 mt-4">No users yet.</p>}
+      {users.length === 0 && (
+        <p className="text-gray-500 mt-4">No users yet.</p>
+      )}
     </div>
   );
 }

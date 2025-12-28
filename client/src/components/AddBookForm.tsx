@@ -43,8 +43,15 @@ export default function AddBookForm({ onSuccess }: Props) {
       setIsbn("");
       setTotalCopies(1);
       onSuccess();
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to add book");
+    } catch (err: unknown) {
+      let msg = "Failed to add book";
+      if (typeof err === "object" && err !== null) {
+        const e = err as Record<string, unknown>;
+        const response = e.response as Record<string, unknown> | undefined;
+        const data = response?.data as Record<string, unknown> | undefined;
+        if (typeof data?.message === "string") msg = data.message;
+      }
+      setError(msg);
     }
   };
 

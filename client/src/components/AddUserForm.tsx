@@ -29,8 +29,15 @@ export default function AddUserForm({ onSuccess }: Props) {
       setName("");
       setEmail("");
       onSuccess();
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to add user");
+    } catch (err: unknown) {
+      let msg = "Failed to add user";
+      if (typeof err === "object" && err !== null) {
+        const e = err as Record<string, unknown>;
+        const response = e.response as Record<string, unknown> | undefined;
+        const data = response?.data as Record<string, unknown> | undefined;
+        if (typeof data?.message === "string") msg = data.message;
+      }
+      setError(msg);
     }
   };
 

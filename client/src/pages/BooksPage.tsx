@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getBooks, deleteBook } from "../api/books.api";
 import AddBookForm from "../components/AddBookForm";
 import EditBookForm from "../components/EditBookForm";
+import IssueBookForm from "../components/IssueBookForm";
 
 type Book = {
   id: number;
@@ -16,6 +17,10 @@ export default function BooksPage() {
   const [books, setBooks] = useState<Book[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
+  const [showIssueForm, setShowIssueForm] = useState(false);
+  const [issueInitialBookId, setIssueInitialBookId] = useState<
+    number | undefined
+  >(undefined);
 
   const loadBooks = () => {
     getBooks().then((res) => setBooks(res.data));
@@ -23,6 +28,10 @@ export default function BooksPage() {
 
   useEffect(() => {
     loadBooks();
+
+    const handler = () => loadBooks();
+    window.addEventListener("l_s:books-updated", handler);
+    return () => window.removeEventListener("l_s:books-updated", handler);
   }, []);
 
   const handleDelete = async (id: number) => {
@@ -31,8 +40,15 @@ export default function BooksPage() {
     try {
       await deleteBook(id);
       loadBooks();
-    } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to delete");
+    } catch (err: unknown) {
+      let msg = "Failed to delete";
+      if (typeof err === "object" && err !== null) {
+        const e = err as Record<string, unknown>;
+        const response = e.response as Record<string, unknown> | undefined;
+        const data = response?.data as Record<string, unknown> | undefined;
+        if (typeof data?.message === "string") msg = data.message;
+      }
+      alert(msg);
     }
   };
 
@@ -47,14 +63,37 @@ export default function BooksPage() {
         {showForm ? "Cancel" : "Add Book"}
       </button>
 
-      {showForm && <AddBookForm onSuccess={() => { loadBooks(); setShowForm(false); }} />}
+      {showForm && (
+        <AddBookForm
+          onSuccess={() => {
+            loadBooks();
+            setShowForm(false);
+          }}
+        />
+      )}
 
       {editingBook && (
         <EditBookForm
           book={editingBook}
-          onSuccess={() => { loadBooks(); setEditingBook(null); }}
+          onSuccess={() => {
+            loadBooks();
+            setEditingBook(null);
+          }}
           onCancel={() => setEditingBook(null)}
         />
+      )}
+
+      {showIssueForm && (
+        <div className="mb-4">
+          <IssueBookForm
+            initialBookId={issueInitialBookId}
+            onSuccess={() => {
+              setShowIssueForm(false);
+              setIssueInitialBookId(undefined);
+              loadBooks();
+            }}
+          />
+        </div>
       )}
 
       <table className="w-full border">
@@ -83,6 +122,22 @@ export default function BooksPage() {
                 >
                   Edit
                 </button>
+
+                <button
+                  onClick={() => {
+                    setIssueInitialBookId(b.id);
+                    setShowIssueForm(true);
+                  }}
+                  disabled={b.availableCopies <= 0}
+                  className={`px-2 py-1 rounded text-sm mr-2 ${
+                    b.availableCopies > 0
+                      ? "bg-green-600 text-white hover:bg-green-700"
+                      : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                  }`}
+                >
+                  Issue
+                </button>
+
                 <button
                   onClick={() => handleDelete(b.id)}
                   className="bg-red-500 text-white px-2 py-1 rounded text-sm"
@@ -95,7 +150,9 @@ export default function BooksPage() {
         </tbody>
       </table>
 
-      {books.length === 0 && <p className="text-gray-500 mt-4">No books yet.</p>}
+      {books.length === 0 && (
+        <p className="text-gray-500 mt-4">No books yet.</p>
+      )}
     </div>
   );
 }

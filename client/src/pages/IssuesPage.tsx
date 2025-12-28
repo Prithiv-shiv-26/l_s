@@ -27,8 +27,16 @@ export default function IssuesPage() {
     try {
       await returnBook(issueId);
       loadIssues();
-    } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to return book");
+      window.dispatchEvent(new CustomEvent("l_s:books-updated"));
+    } catch (err: unknown) {
+      let msg = "Failed to return book";
+      if (typeof err === "object" && err !== null) {
+        const e = err as Record<string, unknown>;
+        const response = e.response as Record<string, unknown> | undefined;
+        const data = response?.data as Record<string, unknown> | undefined;
+        if (typeof data?.message === "string") msg = data.message;
+      }
+      alert(msg);
     }
   };
 
@@ -43,7 +51,15 @@ export default function IssuesPage() {
         {showForm ? "Cancel" : "Issue Book"}
       </button>
 
-      {showForm && <IssueBookForm onSuccess={() => { loadIssues(); setShowForm(false); }} />}
+      {showForm && (
+        <IssueBookForm
+          onSuccess={() => {
+            loadIssues();
+            setShowForm(false);
+            window.dispatchEvent(new CustomEvent("l_s:books-updated"));
+          }}
+        />
+      )}
 
       <table className="w-full border">
         <thead>
@@ -59,7 +75,9 @@ export default function IssuesPage() {
             <tr key={issue.id} className="border-b">
               <td className="p-2">{issue.user.name}</td>
               <td className="p-2">{issue.book.title}</td>
-              <td className="p-2">{new Date(issue.issuedAt).toLocaleString()}</td>
+              <td className="p-2">
+                {new Date(issue.issuedAt).toLocaleString()}
+              </td>
               <td className="p-2">
                 <button
                   onClick={() => handleReturn(issue.id)}
@@ -73,7 +91,9 @@ export default function IssuesPage() {
         </tbody>
       </table>
 
-      {issues.length === 0 && <p className="text-gray-500 mt-4">No active issues.</p>}
+      {issues.length === 0 && (
+        <p className="text-gray-500 mt-4">No active issues.</p>
+      )}
     </div>
   );
 }

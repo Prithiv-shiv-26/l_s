@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getActiveIssues, returnBook } from "../api/issues.api";
 import Section from "./Section";
+import IssueBookForm from "../components/IssueBookForm";
 
 type Issue = {
   id: number;
@@ -13,6 +14,7 @@ type Issue = {
 export default function IssuesSection() {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
 
   const loadIssues = async () => {
     const res = await getActiveIssues();
@@ -36,10 +38,32 @@ export default function IssuesSection() {
   const handleReturn = async (id: number) => {
     await returnBook(id);
     loadIssues();
+    // notify other parts of the app that book availability changed
+    window.dispatchEvent(new CustomEvent("l_s:books-updated"));
   };
 
   return (
-    <Section title="Issued Books">
+    <Section
+      title="Issued Books"
+      actions={
+        <button
+          onClick={() => setShowForm((s) => !s)}
+          className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+        >
+          {showForm ? "Cancel" : "Issue Book"}
+        </button>
+      }
+    >
+      {showForm && (
+        <IssueBookForm
+          onSuccess={() => {
+            setShowForm(false);
+            loadIssues();
+            window.dispatchEvent(new CustomEvent("l_s:books-updated"));
+          }}
+        />
+      )}
+
       {loading && <p>Loading...</p>}
 
       {!loading && issues.length === 0 && (

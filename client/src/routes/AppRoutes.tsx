@@ -1,7 +1,7 @@
 import{Routes,Route, Navigate} from "react-router-dom";
-import BooksPage from "../pages/BooksPage";
-import IssuesPage from "../pages/IssuesPage";
-import UsersPage from "../pages/UsersPage";
+import BooksPage from "../pages/BooksSection";
+import IssuesPage from "../pages/IssuesSection";
+import UsersPage from "../pages/UsersSection";
 
 const AppRoutes=()=>(
     <Routes>

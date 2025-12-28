@@ -1,17 +1,21 @@
-import { Link } from "react-router-dom"
-import AppRoutes from "./routes/AppRoutes"
+import BooksSection from "./pages/BooksSection";
+import IssuesSection from "./pages/IssuesSection";
+import UsersSection from "./pages/UsersSection";
 
-const App=()=> {
+const App = () => {
   return (
-    <div>
-      <nav style={{marginBottom: "20px"}}>
-        <Link to="/books" style={{marginRight: "10px"}}>Books</Link>
-        <Link to="/issues" style={{marginRight: "10px"}}>Issues</Link>
-        <Link to="/users">Users</Link>
-      </nav>
-      <AppRoutes/>
-    </div>
-  )
-}
+    <div className="min-h-screen bg-gray-100 py-10">
+      <div className="max-w-6xl mx-auto px-4 space-y-10">
+        <h1 className="text-3xl font-bold text-center">
+          Library Management System
+        </h1>
 
-export default App
+        <BooksSection />
+        <IssuesSection />
+        <UsersSection />
+      </div>
+    </div>
+  );
+};
+
+export default App;

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getUsers, deleteUser } from "../api/users.api";
 import AddUserForm from "../components/AddUserForm";
+import EditUserForm from "../components/EditUserForm";
 
 type User = {
   id: number;
@@ -12,6 +13,7 @@ type User = {
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
 
   const loadUsers = () => {
     getUsers().then((res) => setUsers(res.data));
@@ -45,6 +47,14 @@ export default function UsersPage() {
 
       {showForm && <AddUserForm onSuccess={() => { loadUsers(); setShowForm(false); }} />}
 
+      {editingUser && (
+        <EditUserForm
+          user={editingUser}
+          onSuccess={() => { loadUsers(); setEditingUser(null); }}
+          onCancel={() => setEditingUser(null)}
+        />
+      )}
+
       <table className="w-full border">
         <thead>
           <tr className="border-b bg-gray-100">
@@ -61,6 +71,12 @@ export default function UsersPage() {
               <td className="p-2">{u.email}</td>
               <td className="p-2">{new Date(u.createdAt).toLocaleDateString()}</td>
               <td className="p-2">
+                <button
+                  onClick={() => setEditingUser(u)}
+                  className="bg-blue-500 text-white px-2 py-1 rounded text-sm mr-2"
+                >
+                  Edit
+                </button>
                 <button
                   onClick={() => handleDelete(u.id)}
                   className="bg-red-500 text-white px-2 py-1 rounded text-sm"

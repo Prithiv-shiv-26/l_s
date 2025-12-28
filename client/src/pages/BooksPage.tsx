@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getBooks, deleteBook } from "../api/books.api";
 import AddBookForm from "../components/AddBookForm";
+import EditBookForm from "../components/EditBookForm";
 
 type Book = {
   id: number;
@@ -14,6 +15,7 @@ type Book = {
 export default function BooksPage() {
   const [books, setBooks] = useState<Book[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingBook, setEditingBook] = useState<Book | null>(null);
 
   const loadBooks = () => {
     getBooks().then((res) => setBooks(res.data));
@@ -47,6 +49,14 @@ export default function BooksPage() {
 
       {showForm && <AddBookForm onSuccess={() => { loadBooks(); setShowForm(false); }} />}
 
+      {editingBook && (
+        <EditBookForm
+          book={editingBook}
+          onSuccess={() => { loadBooks(); setEditingBook(null); }}
+          onCancel={() => setEditingBook(null)}
+        />
+      )}
+
       <table className="w-full border">
         <thead>
           <tr className="border-b bg-gray-100">
@@ -67,6 +77,12 @@ export default function BooksPage() {
               <td className="p-2">{b.totalCopies}</td>
               <td className="p-2">{b.availableCopies}</td>
               <td className="p-2">
+                <button
+                  onClick={() => setEditingBook(b)}
+                  className="bg-blue-500 text-white px-2 py-1 rounded text-sm mr-2"
+                >
+                  Edit
+                </button>
                 <button
                   onClick={() => handleDelete(b.id)}
                   className="bg-red-500 text-white px-2 py-1 rounded text-sm"

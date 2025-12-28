@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getBooks } from "../api/books.api";
+import { getBooks, deleteBook } from "../api/books.api";
 import AddBookForm from "../components/AddBookForm";
 
 type Book = {
@@ -23,6 +23,17 @@ export default function BooksPage() {
     loadBooks();
   }, []);
 
+  const handleDelete = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this book?")) return;
+
+    try {
+      await deleteBook(id);
+      loadBooks();
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Failed to delete");
+    }
+  };
+
   return (
     <div className="p-4">
       <h2 className="text-xl font-bold mb-4">Books</h2>
@@ -44,6 +55,7 @@ export default function BooksPage() {
             <th className="p-2 text-left">ISBN</th>
             <th className="p-2 text-left">Total</th>
             <th className="p-2 text-left">Available</th>
+            <th className="p-2 text-left">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -54,6 +66,14 @@ export default function BooksPage() {
               <td className="p-2">{b.isbn}</td>
               <td className="p-2">{b.totalCopies}</td>
               <td className="p-2">{b.availableCopies}</td>
+              <td className="p-2">
+                <button
+                  onClick={() => handleDelete(b.id)}
+                  className="bg-red-500 text-white px-2 py-1 rounded text-sm"
+                >
+                  Delete
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>

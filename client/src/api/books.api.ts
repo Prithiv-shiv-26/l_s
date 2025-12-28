@@ -8,3 +8,5 @@ export const createBook = (data: {
   isbn: string;
   totalCopies: number;
 }) => api.post("/books", data);
+
+export const deleteBook = (id: number) => api.delete(`/books/${id}`);

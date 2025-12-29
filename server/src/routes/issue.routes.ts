@@ -12,6 +12,5 @@ router.get("/active", getActiveIssues);
 router.post("/", issueBook);
 router.post("/:id/return", returnBook);
 router.get("/", getAllIssues);
-router;
 
 export default router;

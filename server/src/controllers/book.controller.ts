@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { AppDataSource } from "../data-source";
 import { Book } from "../entities/Book";
+import { IssueRecord } from "../entities/IssueRecord";
 import { createBookSchema, updateBookSchema } from "../validators/book.schema";
 
 const BookRepo = AppDataSource.getRepository(Book);
@@ -17,6 +18,10 @@ export const createBook = async (req: Request, res: Response) => {
   }
 
   const { title, author, isbn, totalCopies } = parsed.data;
+  const copies =
+    typeof totalCopies === "number" && Number.isFinite(totalCopies)
+      ? Math.max(1, Math.trunc(totalCopies))
+      : 1;
 
   const existingBook = await BookRepo.findOne({
     where: { isbn },
@@ -32,8 +37,8 @@ export const createBook = async (req: Request, res: Response) => {
     title,
     author,
     isbn,
-    totalCopies,
-    availableCopies: totalCopies,
+    totalCopies: copies,
+    availableCopies: copies,
   });
 
   const savedBook = await BookRepo.save(book);
@@ -143,11 +148,46 @@ export const deleteBook = async (req: Request, res: Response) => {
     return res.status(404).json({ message: "Book not Found" });
   }
 
-  if (book.availableCopies !== book.totalCopies) {
+  // Count only active (not returned) issue records referencing this book
+  const activeIssuesCount = await AppDataSource.getRepository(IssueRecord)
+    .createQueryBuilder("issue")
+    .where("issue.bookId = :id", { id: BookId })
+    .andWhere("issue.returnedAt IS NULL")
+    .getCount();
+
+  if (activeIssuesCount > 0) {
     return res.status(400).json({
-      message: "Cannot delete book while some copies are issued",
+      message: `Cannot delete book: ${activeIssuesCount} active issue record(s) reference this book. Return the books first.`,
     });
   }
-  await BookRepo.remove(book);
-  return res.status(204).send();
+
+  try {
+    // If there are returned issue records (only), remove them first to avoid FK constraint errors
+    const totalIssuesCount = await AppDataSource.getRepository(IssueRecord)
+      .createQueryBuilder("issue")
+      .where("issue.bookId = :id", { id: BookId })
+      .getCount();
+
+    if (totalIssuesCount > 0) {
+      await AppDataSource.transaction(async (manager) => {
+        await manager
+          .createQueryBuilder()
+          .delete()
+          .from(IssueRecord)
+          .where("bookId = :id", { id: BookId })
+          .execute();
+
+        await manager.remove(Book, book);
+      });
+    } else {
+      await BookRepo.remove(book);
+    }
+
+    return res.status(204).send();
+  } catch (err) {
+    console.error("Failed to remove book:", err);
+    return res
+      .status(500)
+      .json({ message: "Failed to delete book due to server error" });
+  }
 };

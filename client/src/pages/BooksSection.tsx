@@ -35,7 +35,14 @@ export default function BooksSection() {
       load();
     } catch (err) {
       console.error(err);
-      alert("Failed to delete book");
+      let msg = "Failed to delete book";
+      if (typeof err === "object" && err !== null) {
+        const e = err as Record<string, unknown>;
+        const response = e.response as Record<string, unknown> | undefined;
+        const data = response?.data as Record<string, unknown> | undefined;
+        if (typeof data?.message === "string") msg = data.message;
+      }
+      alert(msg);
     }
   };
 
@@ -104,8 +111,16 @@ export default function BooksSection() {
                         Edit
                       </button>
                       <button
-                        className="bg-red-500 text-white px-3 py-1 rounded"
+                        className={`bg-red-500 text-white px-3 py-1 rounded ${
+                          b.availableCopies !== b.totalCopies ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
                         onClick={() => handleDelete(b.id)}
+                        disabled={b.availableCopies !== b.totalCopies}
+                        title={
+                          b.availableCopies !== b.totalCopies
+                            ? "Cannot delete while copies are issued"
+                            : "Delete book"
+                        }
                       >
                         Delete
                       </button>

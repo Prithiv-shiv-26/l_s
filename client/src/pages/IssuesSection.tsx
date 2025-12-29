@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getActiveIssues, returnBook } from "../api/issues.api";
+import { getAllIssues, returnBook } from "../api/issues.api";
 import Section from "./Section";
 import IssueBookForm from "../components/IssueBookForm";
 
@@ -17,16 +17,33 @@ export default function IssuesSection() {
   const [showForm, setShowForm] = useState(false);
 
   const loadIssues = async () => {
-    const res = await getActiveIssues();
-    setIssues(res.data);
-    setLoading(false);
+    try {
+      const res = await getAllIssues();
+      setIssues(res.data);
+      setLoading(false);
+    } catch (err) {
+      console.error("Failed to load issues:", err);
+      setLoading(false);
+      // Don't show alert here as it's called after successful operations
+      // User can see the error in console if needed
+    }
   };
 
   useEffect(() => {
     async function fetchIssues() {
       try {
-        const res = await getActiveIssues();
+        const res = await getAllIssues();
         setIssues(res.data);
+      } catch (err) {
+        console.error("Failed to load issues:", err);
+        let msg = "Failed to load issues";
+        if (typeof err === "object" && err !== null) {
+          const e = err as Record<string, unknown>;
+          const response = e.response as Record<string, unknown> | undefined;
+          const data = response?.data as Record<string, unknown> | undefined;
+          if (typeof data?.message === "string") msg = data.message;
+        }
+        alert(msg);
       } finally {
         setLoading(false);
       }
@@ -36,10 +53,22 @@ export default function IssuesSection() {
   }, []);
 
   const handleReturn = async (id: number) => {
-    await returnBook(id);
-    loadIssues();
-    // notify other parts of the app that book availability changed
-    window.dispatchEvent(new CustomEvent("l_s:books-updated"));
+    try {
+      await returnBook(id);
+      loadIssues();
+      // notify other parts of the app that book availability changed
+      window.dispatchEvent(new CustomEvent("l_s:books-updated"));
+    } catch (err) {
+      console.error("Failed to return book:", err);
+      let msg = "Failed to return book";
+      if (typeof err === "object" && err !== null) {
+        const e = err as Record<string, unknown>;
+        const response = e.response as Record<string, unknown> | undefined;
+        const data = response?.data as Record<string, unknown> | undefined;
+        if (typeof data?.message === "string") msg = data.message;
+      }
+      alert(msg);
+    }
   };
 
   return (
@@ -77,6 +106,7 @@ export default function IssuesSection() {
               <th className="py-2">User</th>
               <th>Book</th>
               <th>Issued At</th>
+              <th>Returned At</th>
               <th></th>
             </tr>
           </thead>
@@ -88,12 +118,17 @@ export default function IssuesSection() {
                 <td>{issue.book.title}</td>
                 <td>{new Date(issue.issuedAt).toLocaleString()}</td>
                 <td>
-                  <button
-                    onClick={() => handleReturn(issue.id)}
-                    className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
-                  >
-                    Return
-                  </button>
+                  {issue.returnedAt ? new Date(issue.returnedAt).toLocaleString() : "-"}
+                </td>
+                <td>
+                  {!issue.returnedAt && (
+                    <button
+                      onClick={() => handleReturn(issue.id)}
+                      className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                    >
+                      Return
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

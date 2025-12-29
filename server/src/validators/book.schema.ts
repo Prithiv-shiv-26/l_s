@@ -16,7 +16,7 @@ export const createBookSchema = z.object({
       message: "Author name contains invalid characters",
     }),
   isbn: z.string().trim().min(5, "ISBN is required").max(20),
-  totalCopies: z.number().int().positive().optional(),
+  totalCopies: z.number().int().positive(),
 });
 
 export const updateBookSchema = createBookSchema

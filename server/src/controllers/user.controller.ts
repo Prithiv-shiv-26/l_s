@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { AppDataSource } from "../data-source";
 import { User } from "../entities/User";
+import { IssueRecord } from "../entities/IssueRecord";
 import { createUserSchema, updateUserSchema } from "../validators/user.schema";
 
 const UserRepo = AppDataSource.getRepository(User);
@@ -122,6 +123,46 @@ export const deleteUser = async (req: Request, res: Response) => {
     return res.status(404).json({ message: "User not Found" });
   }
 
-  await UserRepo.remove(user);
-  return res.status(204).send();
+  // Check for active (not returned) issues referencing this user
+  const activeIssuesCount = await AppDataSource.getRepository(IssueRecord)
+    .createQueryBuilder("issue")
+    .where("issue.userId = :id", { id: userId })
+    .andWhere("issue.returnedAt IS NULL")
+    .getCount();
+
+  if (activeIssuesCount > 0) {
+    return res.status(400).json({
+      message: `Cannot delete user: ${activeIssuesCount} active issue record(s) reference this user. Return the books first.`,
+    });
+  }
+
+  try {
+    // If only returned issue records exist, remove them first to avoid FK constraint errors
+    const totalIssuesCount = await AppDataSource.getRepository(IssueRecord)
+      .createQueryBuilder("issue")
+      .where("issue.userId = :id", { id: userId })
+      .getCount();
+
+    if (totalIssuesCount > 0) {
+      await AppDataSource.transaction(async (manager) => {
+        await manager
+          .createQueryBuilder()
+          .delete()
+          .from(IssueRecord)
+          .where("userId = :id", { id: userId })
+          .execute();
+
+        await manager.remove(User, user);
+      });
+    } else {
+      await UserRepo.remove(user);
+    }
+
+    return res.status(204).send();
+  } catch (err) {
+    console.error("Failed to remove user:", err);
+    return res
+      .status(500)
+      .json({ message: "Failed to delete user due to server error" });
+  }
 };

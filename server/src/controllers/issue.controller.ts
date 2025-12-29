@@ -4,8 +4,7 @@ import { IssueRecord } from "../entities/IssueRecord";
 import { User } from "../entities/User";
 import { Book } from "../entities/Book";
 import { IssueBookSchema } from "../validators/issue.schema";
-import { LessThanOrEqual, IsNull } from "typeorm";
-import { is } from "zod/locales";
+import { IsNull } from "typeorm";
 
 const issueRepo = AppDataSource.getRepository(IssueRecord);
 const userRepo = AppDataSource.getRepository(User);

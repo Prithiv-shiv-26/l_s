@@ -7,3 +7,5 @@ export const issueBook = (userId: number, bookId: number) =>
 
 export const returnBook = (issueId: number) =>
   api.post(`/issues/${issueId}/return`);
+
+export const getAllIssues = () => api.get("/issues");
